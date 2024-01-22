@@ -24,6 +24,7 @@ async def my_loop():
                 headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"}
                 response = requests.get(url, headers=headers)
                 print(response)
+                ###PARSING START
                 soup = BeautifulSoup(response.text, 'html.parser')
                 price = soup.find('span', class_='price').text
                 img1 = soup.find('div', class_='product media')
@@ -45,6 +46,7 @@ async def my_loop():
                         else:
                             size = size.replace(' - powiadom o dostępności', ' - 0')
                             output = output + size + '\n'
+                ###PARSING FINISH
                 if url not in previous_outputs or output != previous_outputs[url]:
                     previous_outputs[url] = output
                     channel = bot.get_channel(CHANNEL_ID)
