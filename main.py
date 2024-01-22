@@ -4,8 +4,8 @@ import asyncio
 import requests
 from bs4 import BeautifulSoup
 import time
-TOKEN = 'MTE5MTU4NjY2NDEzNzY0MjAyNA.GTGnEm.oxGVYZYmnGziGVBvsHBfhgdhJcV4voJ-O19Zfk'
-CHANNEL_ID = 1179908389195755610
+TOKEN = str(input('Input your TOKEN: '))
+CHANNEL_ID = int(input('input channel id: '))
 urls = []
 intents = discord.Intents.all()
 previous_outputs = {}
