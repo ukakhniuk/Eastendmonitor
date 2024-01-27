@@ -1,14 +1,30 @@
 import discord
 from discord.ext import commands
 import asyncio
-import requests
 from bs4 import BeautifulSoup
 import time
+import aiohttp
 TOKEN = str(input('Input your TOKEN: '))
 CHANNEL_ID = int(input('input channel id: '))
 urls = []
 intents = discord.Intents.all()
 previous_outputs = {}
+async def fetch_data(url, headers):
+    while True:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers) as response:
+                    print(response)
+                    if response.status == 200:
+                        return await response.text()
+                    else:
+                        print('Something went wrong...')
+        except aiohttp.InvalidURL:
+            print('Invalid URL.')
+            urls.remove(url)
+            break
+        except aiohttp.ClientConnectorError as e:
+            print(f"Error: {e}")
 async def my_loop():
     global previous_output
     while True:
@@ -22,35 +38,33 @@ async def my_loop():
                 name = name.replace('-', ' ')
                 name = name.upper()
                 headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"}
-                response = requests.get(url, headers=headers)
-                print(response)
+                response = await fetch_data(url, headers)
+                if url not in urls:
+                    continue
                 ###PARSING START
-                if str(response) == '<Response [200]>':
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    price = soup.find('span', class_='price').text
-                    img1 = soup.find('div', class_='product media')
-                    img2 = img1.find('div', class_='product-slider')
-                    img3 = img2.find_all('a', href=True)
-                    img = img3[0]['href']
-                    data = soup.find_all('div', class_='control')
-                    k = 0
-                    for i in data:
-                        k += 1
-                        if k == 2:
-                            data2 = i
-                    sizes = [option.get_text(strip=True) for option in data2.select('select#attribute156 option')]
-                    output = ' ### [' + str(name) + '](' + str(url) + ')' + '\n' + ' **price:  ' + str(price) + '**\n\n**sizes:**\n'
-                    for size in sizes:
-                        if size != sizes[0]:
-                            if len(size) <= 17:
-                                output = output + size + ' - few' + '\n'
-                            else:
-                                size = size.replace(' - powiadom o dostępności', ' - 0')
-                                output = output + size + '\n'
-                else:
-                    output = '1'
+                soup = BeautifulSoup(response, 'html.parser')
+                price = soup.find('span', class_='price').text
+                img1 = soup.find('div', class_='product media')
+                img2 = img1.find('div', class_='product-slider')
+                img3 = img2.find_all('a', href=True)
+                img = img3[0]['href']
+                data = soup.find_all('div', class_='control')
+                k = 0
+                for i in data:
+                    k += 1
+                    if k == 2:
+                        data2 = i
+                sizes = [option.get_text(strip=True) for option in data2.select('select#attribute156 option')]
+                output = f' ### [{name}]({url})\n**price: {price} **\n\n**sizes:**\n'
+                for size in sizes:
+                    if size != sizes[0]:
+                        if len(size) <= 17:
+                            output = output + size + ' - few' + '\n'
+                        else:
+                            size = size.replace(' - powiadom o dostępności', ' - 0')
+                            output = output + size + '\n'
                 ###PARSING FINISH
-                if (output != '1' and (url not in previous_outputs or output != previous_outputs[url])):
+                if url not in previous_outputs or output != previous_outputs[url]:
                     previous_outputs[url] = output
                     channel = bot.get_channel(CHANNEL_ID)
                     embed = discord.Embed(
@@ -60,20 +74,22 @@ async def my_loop():
                     embed.set_thumbnail(url=img)
                     embed.set_footer(text="V-Solutions Beta")
                     await channel.send(embed=embed)
-                elif output =='1':
-                    print('Something went wrong...')
             end_time = time.time()
             elapsed_time = end_time - start_time
-            print(f"time: {elapsed_time:.2f} sec")
+            print(f"time: {elapsed_time:.2f} sec for {len(urls)} links.")
             await asyncio.sleep(0)
 bot = commands.Bot(command_prefix='/', intents=intents)
 @bot.event
 async def on_ready():
-    bot.loop.create_task(my_loop())
+    await bot.loop.create_task(my_loop())
 @bot.event
 async def on_message(message):
     if message.channel.id == CHANNEL_ID:
         await bot.process_commands(message)
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send("Wrong command.")
 @bot.command(name='url')
 async def set_url(ctx, new_url):
     global urls
@@ -93,7 +109,8 @@ async def urls_list(ctx):
 async def urls_clear(ctx):
     global urls
     global previous_outputs
-    previous_outputs = {}
     urls = []
     await ctx.send('No monitored URLs anymore.')
+    await asyncio.sleep(8)
+    previous_outputs = {}
 bot.run(TOKEN)
