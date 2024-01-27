@@ -1,13 +1,14 @@
-import discord
-from discord.ext import commands
+import disnake
 import asyncio
 from bs4 import BeautifulSoup
 import time
 import aiohttp
+from disnake.ext import commands
 TOKEN = str(input('Input your TOKEN: '))
-CHANNEL_ID = int(input('input channel id: '))
+SERVER_ID = int(input('Input your server ID: '))
+CHANNEL_ID = int(input('Input your channel ID: '))
 urls = []
-intents = discord.Intents.all()
+intents = disnake.Intents.all()
 previous_outputs = {}
 async def fetch_data(url, headers):
     while True:
@@ -67,9 +68,9 @@ async def my_loop():
                 if url not in previous_outputs or output != previous_outputs[url]:
                     previous_outputs[url] = output
                     channel = bot.get_channel(CHANNEL_ID)
-                    embed = discord.Embed(
+                    embed = disnake.Embed(
                         description=output,
-                        color=discord.Color.purple()
+                        color=disnake.Color.purple()
                     )
                     embed.set_thumbnail(url=img)
                     embed.set_footer(text="V-Solutions Beta")
@@ -78,7 +79,7 @@ async def my_loop():
             elapsed_time = end_time - start_time
             print(f"time: {elapsed_time:.2f} sec for {len(urls)} links.")
             await asyncio.sleep(0)
-bot = commands.Bot(command_prefix='/', intents=intents)
+bot = commands.Bot(command_prefix=None, intents=intents, test_guilds=[SERVER_ID])
 @bot.event
 async def on_ready():
     await bot.loop.create_task(my_loop())
@@ -90,12 +91,12 @@ async def on_message(message):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send("Wrong command.")
-@bot.command(name='url')
+@bot.slash_command(name='url', description='Add URL for monitoring')
 async def set_url(ctx, new_url):
     global urls
     urls.append(new_url)
     await ctx.send(f'new URL: {new_url}')
-@bot.command(name='urls')
+@bot.slash_command(name='urls', description='Show all URLs that are currently being monitored')
 async def urls_list(ctx):
     global urls
     output = ''
@@ -105,7 +106,7 @@ async def urls_list(ctx):
         await ctx.send(f'URLs:{output}')
     else:
         await ctx.send('No monitored URLs.')
-@bot.command(name='urls_clear')
+@bot.slash_command(name='urls_clear', description='Remove every URL')
 async def urls_clear(ctx):
     global urls
     global previous_outputs
