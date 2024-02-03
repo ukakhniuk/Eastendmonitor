@@ -97,20 +97,25 @@ async def my_loop():
                         data2 = i
                 sizes = [option.get_text(strip=True) for option in data2.select('select#attribute156 option')]
                 output = f' ### [{name}]({url})\n**price: {price} **\n\n**sizes:**\n'
+                sizer = ''
                 for size in sizes:
                     if size != sizes[0]:
                         if len(size) <= 17:
                             output = output + size + ' - few' + '\n'
+                            size = f'{size} - few'
                         else:
                             size = size.replace(' - powiadom o dostępności', ' - 0')
                             output = output + size + '\n'
+                        sizer = sizer + size + '\n'
                 #PARSING FINISH
 
                 if url not in previous_outputs or output != previous_outputs[url]:
                     previous_outputs[url] = output
-                    channel = bot.get_channel(CHANNEL_ID)
+                    channel = bot.get_channel(int(CHANNEL_ID))
                     embed = disnake.Embed(
-                        description=output,
+                        description=f'**price: {price} **\n\n**sizes**: \n{sizer}',
+                        url=url,
+                        title=name,
                         color=disnake.Color.purple()
                     )
                     embed.set_thumbnail(url=img)
@@ -125,6 +130,8 @@ bot = commands.Bot(command_prefix='/', intents=intents, test_guilds=[int(SERVER_
 @bot.event
 async def on_ready():
     await bot.loop.create_task(my_loop())
+
+
 @bot.event
 async def on_message(message):
     if message.channel.id == CHANNEL_ID:
@@ -167,4 +174,3 @@ async def urls_clear(ctx):
 
 
 bot.run(TOKEN)
-# отдельная функция с проверкой соединения, которая при провале останавливает активные асинхронные функции, но снова потом хуярит bot.run
