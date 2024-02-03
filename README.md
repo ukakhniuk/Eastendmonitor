@@ -22,6 +22,9 @@ To use this bot, follow these steps:
 Once the bot is running and the bot's working data is entered correctly, you can use the following commands:
 
 /url - to add a link for monitoring (you can add an unlimited number of links)
+
 /urls - to show the list of URLs currently being monitored
+
 /urls_clear - to clear the list of URLs (the bot will continue to work, and you can start adding new URLs from scratch).
+
 Please note that you can only monitor products from the eastendshop.com website.
