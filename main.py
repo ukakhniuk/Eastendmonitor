@@ -9,6 +9,8 @@ from tkinter import *
 TOKEN = ''
 SERVER_ID = ''
 CHANNEL_ID = ''
+
+
 def login():
     global TOKEN
     global SERVER_ID
@@ -65,7 +67,7 @@ async def fetch_data(url, headers):
 
 
 async def my_loop():
-    global previous_output
+    global previous_outputs
     while True:
         if len(urls) == 0:
             print('await 10 sec')
@@ -113,13 +115,15 @@ async def my_loop():
                     previous_outputs[url] = output
                     channel = bot.get_channel(int(CHANNEL_ID))
                     embed = disnake.Embed(
-                        description=f'**price: {price} **\n\n**sizes**: \n{sizer}',
+                        #description=f'**price: {price} **\n\n**sizes**: \n{sizer}',
                         url=url,
                         title=name,
                         color=disnake.Color.purple()
                     )
                     embed.set_thumbnail(url=img)
                     embed.set_footer(text="V-Solutions Beta")
+                    embed.add_field(name=f"Price: {price}", value="", inline=False)
+                    embed.add_field(name="Sizes:", value=f"{sizer}", inline=False)
                     await channel.send(embed=embed)
             end_time = time.time()
             elapsed_time = end_time - start_time
@@ -144,7 +148,7 @@ async def on_command_error(ctx, error):
         await ctx.send("Wrong command.")
 
 
-@bot.slash_command(name='url', description='Add URL for monitoring')
+@bot.slash_command(name='url_add', description='Add URL for monitoring')
 async def set_url(ctx, new_url):
     global urls
     urls.append(new_url)
@@ -155,9 +159,11 @@ async def set_url(ctx, new_url):
 async def urls_list(ctx):
     global urls
     output = ''
+    k = 0
     if len(urls) >= 1:
         for url in urls:
-            output = output + '\n' + f'<{url}>'
+            k += 1
+            output = output + '\n' + f'{k}. <{url}>'
         await ctx.send(f'URLs:{output}')
     else:
         await ctx.send('No monitored URLs.')
@@ -171,6 +177,19 @@ async def urls_clear(ctx):
     await ctx.send('No monitored URLs anymore.')
     await asyncio.sleep(8)
     previous_outputs = {}
+
+
+@bot.slash_command(name='url_remove', description='Remove one URL')
+async def url_remove(ctx, url_number):
+    global urls
+    global previous_outputs
+    url_number = int(url_number)
+    url_number -= 1
+    url_temp = urls[url_number]
+    urls.pop(url_number)
+    await ctx.send('URL removed.')
+    await asyncio.sleep(3)
+    previous_outputs.pop(url_temp)
 
 
 bot.run(TOKEN)
