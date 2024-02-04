@@ -5,6 +5,7 @@ import time
 import aiohttp
 from disnake.ext import commands
 from tkinter import *
+from fake_useragent import UserAgent
 # from disnake.errors import LoginFailure - for new futures
 TOKEN = ''
 SERVER_ID = ''
@@ -48,8 +49,10 @@ intents = disnake.Intents.all()
 previous_outputs = {}
 
 
-async def fetch_data(url, headers):
+async def fetch_data(url):
     while True:
+        ua = UserAgent().random
+        headers = {"User-Agent": str(ua)}
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, headers=headers) as response:
@@ -78,8 +81,7 @@ async def my_loop():
                 name = url.replace('https://eastendshop.com/pl/', '')
                 name = name.replace('-', ' ')
                 name = name.upper()
-                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"}
-                response = await fetch_data(url, headers)
+                response = await fetch_data(url)
                 await asyncio.sleep(1)
                 if url not in urls:
                     continue
